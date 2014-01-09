@@ -47,10 +47,10 @@ func DefaultForest(inputs [][]interface{},labels []float64, treesAmount int) *Fo
 	return BuildForest(inputs,labels, treesAmount,n,m)
 }
 
-func (self *Forest) Predicate(input []interface{}) float64{
+func (self *Forest) Predict(input []interface{}) float64{
 	total := 0.0
 	for i:=0;i<len(self.Trees);i++{
-		total += PredicateTree(self.Trees[i],input)
+		total += PredictTree(self.Trees[i],input)
 	}
 	avg := total / float64(len(self.Trees))
 	return avg

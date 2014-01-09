@@ -237,7 +237,7 @@ func genLeafNode(labels []string) *TreeNode{
 }
 
 
-func predicate(node *TreeNode, input []interface{}) map[string]int{
+func Predict(node *TreeNode, input []interface{}) map[string]int{
 	if node.Labels != nil{ //leaf node
 		return node.Labels
 	}
@@ -248,15 +248,15 @@ func predicate(node *TreeNode, input []interface{}) map[string]int{
 	switch value.(type){
 	case float64:
 		if value.(float64)<=node.Value.(float64) && node.Left!=nil{
-			return predicate(node.Left,input)
+			return Predict(node.Left,input)
 		}else if node.Right!=nil{
-			return predicate(node.Right,input)
+			return Predict(node.Right,input)
 		}
 	case string:
 		if value==node.Value && node.Left!=nil{
-			return predicate(node.Left,input)
+			return Predict(node.Left,input)
 		}else if node.Right != nil{
-			return predicate(node.Right,input)
+			return Predict(node.Right,input)
 		}
 	}
 
@@ -282,6 +282,6 @@ func BuildTree(inputs [][]interface{}, labels []string, samples_count,selected_f
 
 
 
-func PredicateTree(tree *Tree, input []interface{}) map[string]int{
-	return predicate(tree.Root,input)
+func PredictTree(tree *Tree, input []interface{}) map[string]int{
+	return Predict(tree.Root,input)
 }

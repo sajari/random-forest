@@ -1,4 +1,4 @@
-//a random forest implemtation in GoLang
+//a random forest implementation in GoLang
 package Regression
 
 import (
@@ -218,7 +218,7 @@ func genLeafNode(labels []float64) *TreeNode{
 }
 
 
-func predicate(node *TreeNode, input []interface{}) float64{
+func Predict(node *TreeNode, input []interface{}) float64{
 	//fmt.Println("node",node)
 	if node.Value == nil{ //leaf node
 		return node.Label
@@ -230,15 +230,15 @@ func predicate(node *TreeNode, input []interface{}) float64{
 	switch value.(type){
 	case float64:
 		if value.(float64)<=node.Value.(float64) && node.Left!=nil{
-			return predicate(node.Left,input)
+			return Predict(node.Left,input)
 		}else if node.Right!=nil{
-			return predicate(node.Right,input)
+			return Predict(node.Right,input)
 		}
 	default:
 		if value==node.Value && node.Left!=nil{
-			return predicate(node.Left,input)
+			return Predict(node.Left,input)
 		}else if node.Right != nil{
-			return predicate(node.Right,input)
+			return Predict(node.Right,input)
 		}
 	}
 
@@ -263,6 +263,6 @@ func BuildTree(inputs [][]interface{}, labels []float64, samples_count,selected_
 
 
 
-func PredicateTree(tree *Tree, input []interface{}) float64{
-	return predicate(tree.Root,input)
+func PredictTree(tree *Tree, input []interface{}) float64{
+	return Predict(tree.Root,input)
 }
