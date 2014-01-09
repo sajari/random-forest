@@ -13,7 +13,8 @@ type Forest struct{
 	Trees []*Tree
 }
 
-func BuildForest(inputs [][]interface{},labels []string, treesAmount, samplesAmount, selectedFeatureAmount int) *Forest{
+// Build a new forest
+func BuildForest(inputs [][]interface{},labels []string, treesAmount, samplesAmount, selectedFeatureAmount int) *Forest {
 	rand.Seed(time.Now().UnixNano())
 	forest := &Forest{}
 	forest.Trees = make([]*Tree,treesAmount)
@@ -22,12 +23,12 @@ func BuildForest(inputs [][]interface{},labels []string, treesAmount, samplesAmo
 	mutex := &sync.Mutex{}
 	for i:=0;i<treesAmount;i++{
 		go func(x int){
-			fmt.Printf(">> %v buiding %vth tree...\n", time.Now(), x)
+			fmt.Printf(">> %v building %vth tree...\n", time.Now(), x)
 			forest.Trees[x] = BuildTree(inputs,labels,samplesAmount,selectedFeatureAmount)
 			//fmt.Printf("<< %v the %vth tree is done.\n",time.Now(), x)
 			mutex.Lock()
 			prog_counter+=1
-			fmt.Printf("%v tranning progress %.0f%%\n",time.Now(),float64(prog_counter) / float64(treesAmount)*100) 
+			fmt.Printf("%v training progress %.0f%%\n",time.Now(),float64(prog_counter) / float64(treesAmount)*100) 
 			mutex.Unlock()
 			done_flag <- true
 		}(i)
@@ -41,13 +42,14 @@ func BuildForest(inputs [][]interface{},labels []string, treesAmount, samplesAmo
 	return forest
 }
 
-func DefaultForest(inputs [][]interface{},labels []string, treesAmount int) *Forest{
+func DefaultForest(inputs [][]interface{},labels []string, treesAmount int) *Forest {
 	m := int( math.Sqrt( float64( len(inputs[0]) ) ) ) 
 	n := int( math.Sqrt( float64( len(inputs) ) )  )
 	return BuildForest(inputs,labels, treesAmount,n,m)
 }
 
-func (self *Forest) Predicate(input []interface{}) string{
+// Predict the class of the input
+func (self *Forest) Predict(input []interface{}) string{
 	counter := make(map[string]float64)
 	for i:=0;i<len(self.Trees);i++{
 		tree_counter := PredicateTree(self.Trees[i],input)
@@ -71,7 +73,8 @@ func (self *Forest) Predicate(input []interface{}) string{
 	return max_label
 }
 
-func DumpForest(forest *Forest, fileName string){
+// Save a forest to disk
+func (forest *Forest) Save(fileName string) {
 	out_f, err:=os.OpenFile(fileName,os.O_CREATE | os.O_RDWR,0777)
 	if err!=nil{
 		panic("failed to create "+fileName)
@@ -81,7 +84,8 @@ func DumpForest(forest *Forest, fileName string){
 	encoder.Encode(forest)
 }
 
-func LoadForest(fileName string) *Forest{
+// Load a forest from disk
+func LoadForest(fileName string) *Forest {
 	in_f ,err := os.Open(fileName)
 	if err!=nil{
 		panic("failed to open "+fileName)
