@@ -4,19 +4,18 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
-	//"strconv"
 	"os"
-
 	"time"
-
-	//"math"
-	"../RF"
+	"../../random-forest/RF"
 )
 
 
 func main(){
 
 	start := time.Now()
+
+	// Open the test data, which is commma delimited
+	// Format is "variable1,variable2,variable3,variable4,variable5,variable6,output"
 	f,_ := os.Open("car.data")
 	defer f.Close()
 	content,_ := ioutil.ReadAll(f)
@@ -50,6 +49,7 @@ func main(){
 	test_inputs := make([][]interface{},0)
 	test_targets := make([]string,0)
 
+	// Split half the data into a training set, the other half into a test set
 	for i,x := range inputs{
 		if i%2==1{
 			test_inputs = append(test_inputs, x)
@@ -66,15 +66,14 @@ func main(){
 		}
 	}
 
-	forest := RF.BuildForest(inputs,targets,10,500,len(train_inputs[0]))//100 trees
+	// Build the forest using the data
+	forest := RF.BuildForest(inputs,targets,10,500,len(train_inputs[0])) //100 trees
 
-	test_inputs = train_inputs
-	test_targets = train_targets
 	err_count := 0.0
 	for i:=0;i<len(test_inputs);i++{
-		output := forest.Predicate(test_inputs[i])
+		output := forest.Predict(test_inputs[i])
 		expect := test_targets[i]
-		//fmt.Println(output,expect)
+		//fmt.Println("Predict: ", output, ", Expect: ", expect) // DEBUG: look at all predictions individually
 		if output!=expect{
 			err_count += 1
 		}
@@ -82,5 +81,20 @@ func main(){
 	fmt.Println("success rate:",1.0 - err_count/float64(len(test_inputs)))
 
 	fmt.Println(time.Since(start))
+
+	// Save the new forest to disk
+	forest.Save("cars.forest")
+	
+	// Load the saved forest from disk
+	loadedforest := RF.LoadForest("cars.forest")
+
+	// Predict a single row of data, we're expecting to see "unacc" as the result
+	// This is the first row of data in the sample set.
+	in := make([]interface{},0)
+	in = append(in, "vhigh","vhigh","2","2","med","high")
+
+	out := loadedforest.Predict(in)
+	fmt.Println("Predicted (should be \"unacc\"): ", out)
+
 
 }
