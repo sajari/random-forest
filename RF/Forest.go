@@ -8,6 +8,7 @@ import (
 	"os"
 	"encoding/json"
 	"sync"
+	"sync/atomic"
 )
 type Forest struct{
 	Trees []*Tree
@@ -18,25 +19,21 @@ func BuildForest(inputs [][]interface{},labels []string, treesAmount, samplesAmo
 	rand.Seed(time.Now().UnixNano())
 	forest := &Forest{}
 	forest.Trees = make([]*Tree,treesAmount)
-	done_flag := make(chan bool)
-	prog_counter := 0
-	mutex := &sync.Mutex{}
+	prog_counter := uint32(0)
+	var wg sync.WaitGroup 
 	for i:=0;i<treesAmount;i++{
+		wg.Add(1)
 		go func(x int){
 			fmt.Printf(">> %v building %vth tree...\n", time.Now(), x)
 			forest.Trees[x] = BuildTree(inputs,labels,samplesAmount,selectedFeatureAmount)
-			//fmt.Printf("<< %v the %vth tree is done.\n",time.Now(), x)
-			mutex.Lock()
-			prog_counter+=1
+			fmt.Printf("<< %v the %vth tree is done.\n",time.Now(), x)
+			prog_counter = atomic.AddUint32(&prog_counter, 1)
 			fmt.Printf("%v training progress %.0f%%\n",time.Now(),float64(prog_counter) / float64(treesAmount)*100) 
-			mutex.Unlock()
-			done_flag <- true
+			wg.Done()
 		}(i)
 	}
 
-	for i:=1;i<=treesAmount;i++{
-		<-done_flag
-	}
+	wg.Wait()
 
 	fmt.Println("all done.")
 	return forest
