@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"sync"
 	"sync/atomic"
+	"runtime"
 )
 type Forest struct{
 	Trees []*Tree
@@ -20,22 +21,28 @@ func BuildForest(inputs [][]interface{},labels []string, treesAmount, samplesAmo
 	forest := &Forest{}
 	forest.Trees = make([]*Tree,treesAmount)
 	prog_counter := uint32(0)
+	scheduleoptimise := make(chan bool, runtime.NumCPU())
+	for i := 0; i < runtime.NumCPU(); i++ {
+		scheduleoptimise <- true
+	}
 	var wg sync.WaitGroup 
 	for i:=0;i<treesAmount;i++{
+		<- scheduleoptimise
 		wg.Add(1)
 		go func(x int){
-			fmt.Printf(">> %v building %vth tree...\n", time.Now(), x)
+			fmt.Printf(">> Building tree %v...\n", x)
 			forest.Trees[x] = BuildTree(inputs,labels,samplesAmount,selectedFeatureAmount)
-			fmt.Printf("<< %v the %vth tree is done.\n",time.Now(), x)
+			//fmt.Printf("<< %v the %vth tree is done.\n",time.Now(), x)
 			prog_counter = atomic.AddUint32(&prog_counter, 1)
-			fmt.Printf("%v training progress %.0f%%\n",time.Now(),float64(prog_counter) / float64(treesAmount)*100) 
+			fmt.Printf("Training progress %.0f%%\n",float64(prog_counter) / float64(treesAmount)*100) 
 			wg.Done()
+			scheduleoptimise <- true
 		}(i)
 	}
 
 	wg.Wait()
 
-	fmt.Println("all done.")
+	fmt.Println("Training done...")
 	return forest
 }
 
